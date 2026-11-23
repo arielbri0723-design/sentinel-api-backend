@@ -16,5 +16,4 @@
 Dentro del contenedor:  docker compose run --rm api python -m pytest -q
 
 ## Reglas
-- El archivo .env nunca se sube a un repositorio.
 - Los puertos solo están abiertos en tu computadora (127.0.0.1).
