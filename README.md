@@ -1,5 +1,7 @@
 # Sentinel API
 
+[![tests](https://github.com/arielbri0723-design/sentinel-api-backend/actions/workflows/tests.yml/badge.svg)](https://github.com/arielbri0723-design/sentinel-api-backend/actions/workflows/tests.yml)
+
 Backend de una red de alerta para conductores, en desarrollo.
 Este primer hito deja lista la base técnica: API, base de datos geoespacial, caché y pruebas automáticas.
 Todavía no incluye las funciones de alertas ni la app móvil.
@@ -109,6 +111,8 @@ Los tests actuales simulan las dependencias, así que no necesitan Postgres ni R
 ```bash
 docker compose run --rm --no-deps api python -m pytest -q
 ```
+
+En cada push a `main`, GitHub Actions corre los tests dos veces: con Python 3.12 directo y dentro de la imagen Docker construida, y aprovecha para validar el `docker-compose.yml`. El estado se ve en el badge de arriba.
 
 ## Seguridad (nivel desarrollo)
 
