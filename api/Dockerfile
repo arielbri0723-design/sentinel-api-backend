@@ -16,6 +16,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY --chown=appuser:appuser app ./app
 COPY --chown=appuser:appuser tests ./tests
+COPY --chown=appuser:appuser pytest.ini .
 
 # No correr como administrador dentro del contenedor
 USER appuser
