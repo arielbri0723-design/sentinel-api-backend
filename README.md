@@ -132,3 +132,7 @@ En cada push a `main`, GitHub Actions corre tres jobs en paralelo: los tests uni
 **Ariel Britez**: maquinista industrial que se está formando en Python y desarrollo de software. Este es mi primer proyecto backend.
 
 GitHub: https://github.com/arielbri0723-design
+
+## Licencia
+
+MIT — ver [LICENSE](LICENSE).
