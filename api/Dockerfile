@@ -5,14 +5,19 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /srv
 
-COPY requirements.txt .
+# El usuario existe antes de los COPY para poder usarlo como dueño de los
+# archivos: si /srv queda de root, pytest no puede escribir su caché y avisa
+# "Permission denied" en cada corrida. El chown de /srv es porque pytest crea
+# el directorio de caché ahí, no solo dentro de app/ y tests/.
+RUN useradd --create-home appuser && chown appuser:appuser /srv
+
+COPY --chown=appuser:appuser requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY app ./app
-COPY tests ./tests
+COPY --chown=appuser:appuser app ./app
+COPY --chown=appuser:appuser tests ./tests
 
 # No correr como administrador dentro del contenedor
-RUN useradd --create-home appuser
 USER appuser
 
 # Sin curl en la imagen: urllib de la stdlib alcanza para el liveness.
