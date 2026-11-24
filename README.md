@@ -102,17 +102,22 @@ La documentación automática (`/docs`, `/redoc`, `/openapi.json`) está desacti
 
 ## Pruebas
 
-```bash
-docker compose run --rm api python -m pytest -q
-```
-
-Los tests actuales simulan las dependencias, así que no necesitan Postgres ni Redis levantados:
+Los tests de la API simulan las dependencias, así que no necesitan Postgres ni Redis levantados:
 
 ```bash
 docker compose run --rm --no-deps api python -m pytest -q
 ```
 
-En cada push a `main`, GitHub Actions corre los tests dos veces: con Python 3.12 directo y dentro de la imagen Docker construida, y aprovecha para validar el `docker-compose.yml`. El estado se ve en el badge de arriba.
+Los tests de integración (marcados `integration`) sí hablan con Postgres y Redis reales, y requieren los servicios arriba:
+
+```bash
+docker compose up -d
+docker compose run --rm api python -m pytest -q -m integration
+```
+
+Uno de ellos crea una base temporal **sin** PostGIS y verifica que `check_postgis()` devuelva `false`. Es el test que impide que se repita el falso verde de `/ready`: con la implementación vieja (`pg_available_extensions`) falla.
+
+En cada push a `main`, GitHub Actions corre tres jobs en paralelo: los tests unitarios con Python 3.12, los tests dentro de la imagen Docker construida, y los de integración contra servicios reales de PostGIS y Redis. También valida el `docker-compose.yml`. El estado se ve en el badge de arriba.
 
 ## Seguridad (nivel desarrollo)
 
