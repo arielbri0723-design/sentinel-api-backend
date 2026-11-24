@@ -23,22 +23,28 @@ Todavía no incluye las funciones de alertas ni la app móvil.
 
 ```text
 sentinel-api-backend/
+├── .github/
+│   └── workflows/
+│       └── tests.yml          # CI: tests, imagen Docker e integración
 ├── api/
 │   ├── app/
 │   │   ├── routers/
 │   │   │   └── health.py
-│   │   ├── cache.py        # cliente Redis y chequeo de salud
-│   │   ├── config.py       # configuración desde el entorno
-│   │   ├── db.py           # conexión a Postgres y chequeos
+│   │   ├── cache.py           # cliente Redis y chequeo de salud
+│   │   ├── config.py          # configuración desde el entorno
+│   │   ├── db.py              # conexión a Postgres y chequeos
 │   │   └── main.py
 │   ├── tests/
+│   │   ├── test_dependencies.py   # integración con Postgres y Redis reales
 │   │   └── test_health.py
 │   ├── .dockerignore
 │   ├── Dockerfile
+│   ├── pytest.ini
 │   └── requirements.txt
 ├── .env.example
 ├── .gitignore
 ├── docker-compose.yml
+├── LICENSE
 └── README.md
 ```
 
