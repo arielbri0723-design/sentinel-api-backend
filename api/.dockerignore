@@ -1,4 +1,13 @@
-__pycache__/
+# Contexto de build = ./api
+.env
+.env.*
+.git
+.gitignore
+**/__pycache__/
 *.pyc
 .pytest_cache/
 .venv/
+venv/
+Dockerfile
+.dockerignore
+*.md

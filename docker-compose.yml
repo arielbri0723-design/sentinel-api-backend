@@ -1,37 +1,47 @@
+name: red-alerta
+
 services:
   postgres:
     image: postgis/postgis:16-3.4
     environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:?falta POSTGRES_DB en .env}
+      POSTGRES_USER: ${POSTGRES_USER:?falta POSTGRES_USER en .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?falta POSTGRES_PASSWORD en .env}
     volumes:
       - pgdata:/var/lib/postgresql/data
     ports:
       - "127.0.0.1:5432:5432"   # solo accesible desde tu computadora
+    shm_size: 256mb
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      # -h 127.0.0.1 obliga a esperar al servidor real: durante initdb el
+      # entrypoint levanta un postgres temporal que solo escucha por socket
+      # unix, y sin -h pg_isready responde antes de tiempo.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
       interval: 5s
       timeout: 3s
       retries: 10
+      start_period: 40s
+    stop_grace_period: 30s
     restart: unless-stopped
 
   redis:
     image: redis:7
     environment:
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?falta REDIS_PASSWORD en .env}
     command: ["sh", "-c", "exec redis-server --appendonly yes --requirepass \"$$REDIS_PASSWORD\""]
     volumes:
       - redisdata:/data
     healthcheck:
-      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" ping 2>/dev/null | grep -q PONG"]
+      # REDISCLI_AUTH evita mandar la clave por argumento (visible en `ps`)
+      test: ["CMD-SHELL", "REDISCLI_AUTH=\"$$REDIS_PASSWORD\" redis-cli ping | grep -q PONG"]
       interval: 5s
       timeout: 3s
       retries: 10
     restart: unless-stopped
 
-  api: 
+  api:
     build: ./api
+    init: true
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
@@ -42,6 +52,7 @@ services:
         condition: service_healthy
     ports:
       - "127.0.0.1:8000:8000"
+    stop_grace_period: 30s
     restart: unless-stopped
 
   # Herramienta de desarrollo: no se levanta salvo que lo pidas
@@ -50,13 +61,18 @@ services:
     image: dpage/pgadmin4
     profiles: ["tools"]
     environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:?falta PGADMIN_EMAIL en .env}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:?falta PGADMIN_PASSWORD en .env}
+      PGADMIN_CONFIG_SERVER_MODE: "False"
     ports:
       - "127.0.0.1:5050:80"
+    volumes:
+      - pgadmin:/var/lib/pgadmin
     depends_on:
       - postgres
+    restart: unless-stopped
 
 volumes:
   pgdata:
   redisdata:
+  pgadmin:

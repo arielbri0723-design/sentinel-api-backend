@@ -1,3 +1,5 @@
+from functools import lru_cache
+
 from pydantic_settings import BaseSettings
 
 
@@ -7,5 +9,7 @@ class Settings(BaseSettings):
     redis_url: str
 
 
+@lru_cache
 def get_settings() -> Settings:
+    """Se parsea el entorno una sola vez por proceso."""
     return Settings()
