@@ -2,7 +2,7 @@
 
 [![tests](https://github.com/arielbri0723-design/sentinel-api-backend/actions/workflows/tests.yml/badge.svg)](https://github.com/arielbri0723-design/sentinel-api-backend/actions/workflows/tests.yml)
 
-Backend de una red de alertas para conductores — FastAPI, PostGIS, Redis y Docker
+Backend de una red de alerta para conductores, en desarrollo.
 Este primer hito deja lista la base técnica: API, base de datos geoespacial, caché y pruebas automáticas.
 Todavía no incluye las funciones de alertas ni la app móvil.
 
