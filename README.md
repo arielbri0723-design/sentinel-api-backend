@@ -1,30 +1,22 @@
 # Sentinel API
 
-Backend API desarrollada con FastAPI, PostgreSQL, Redis y Docker.
+Backend de una red de alerta para conductores, en desarrollo.
+Este primer hito deja lista la base técnica: API, base de datos geoespacial, caché y pruebas automáticas.
+Todavía no incluye las funciones de alertas ni la app móvil.
 
-Infraestructura backend moderna preparada para aplicaciones escalables, con arquitectura modular, persistencia de datos, caché, monitorización mediante health checks, pruebas automatizadas y despliegue mediante contenedores.
+## Estado del proyecto
 
----
+- **Hito 0 (completado):** infraestructura con Docker Compose, API en FastAPI con endpoints de salud y pruebas automáticas.
+- **Próximo, Hito 1:** usuarios, crear alertas y consultar alertas cercanas con PostGIS.
 
-## 🚀 Tecnologías
+## Tecnologías
 
-- Python 3.12
-- FastAPI
-- PostgreSQL + PostGIS
-- Redis
-- Docker
-- Docker Compose
-- Pytest
-- HTTPX
-- Pydantic Settings
+Python 3.12 · FastAPI · PostgreSQL + PostGIS · Redis · Docker y Docker Compose · Pytest · HTTPX · Pydantic Settings
 
----
-
-## 📁 Arquitectura
+## Estructura
 
 ```text
-sentinel-api/
-│
+sentinel-api-backend/
 ├── api/
 │   ├── app/
 │   │   ├── routers/
@@ -32,180 +24,66 @@ sentinel-api/
 │   │   ├── config.py
 │   │   ├── db.py
 │   │   └── main.py
-│   │
 │   ├── tests/
 │   ├── requirements.txt
 │   └── Dockerfile
-│
 ├── docker-compose.yml
 ├── .env.example
 └── README.md
 ```
 
----
+## Cómo ejecutarlo
 
-## ✨ Características
+Requisito: Docker Desktop.
 
-- API modular basada en FastAPI.
-- PostgreSQL con almacenamiento persistente y soporte PostGIS.
-- Redis protegido mediante autenticación y persistencia AOF.
-- Health Checks para monitorización de servicios críticos.
-- Variables de entorno centralizadas.
-- Ejecución de contenedores mediante usuario sin privilegios.
-- Pruebas automatizadas con Pytest y HTTPX.
-- Orquestación de servicios mediante Docker Compose.
-
----
-
-## ⚙️ Configuración
-
-Crear el archivo de entorno:
-
-### Linux / macOS
-
-```bash
-cp .env.example .env
-```
-
-### Windows PowerShell
-
-```powershell
-Copy-Item .env.example .env
-```
-
-Completar las variables requeridas dentro de `.env`.
-
----
-
-## ▶️ Ejecución local
+1. Crea tu archivo de entorno:
+   - Windows PowerShell: `Copy-Item .env.example .env`
+   - Linux / macOS: `cp .env.example .env`
+2. Abre `.env` y reemplaza los valores de ejemplo por contraseñas propias, largas, distintas entre sí y solo con letras y números. Este archivo no se sube al repositorio.
+3. Levanta los servicios:
 
 ```bash
 docker compose up --build
 ```
 
-La API quedará disponible en:
+## Servicios y puertos
 
-```text
-http://localhost:8000
-```
-
----
-
-## 🔌 Servicios
+Todos se exponen solo en `127.0.0.1` (tu computadora).
 
 | Servicio | Puerto |
-|-----------|---------|
+|---|---|
 | API | 8000 |
-| PostgreSQL | 5432 |
-| PgAdmin (perfil `tools`) | 5050 |
+| PostgreSQL + PostGIS | 5432 |
+| pgAdmin (opcional: `docker compose --profile tools up`) | 5050 |
 
----
+Redis solo es accesible desde la red interna de Docker.
 
-## 📚 Documentación API
+## Endpoints
 
-Una vez iniciada la aplicación:
-
-- Swagger UI: http://localhost:8000/docs
-- ReDoc: http://localhost:8000/redoc
-
----
-
-## ❤️ Health Check
-
-Verifica que la API se encuentra en ejecución.
-
-```http
-GET /health
-```
-
-Respuesta esperada:
+- `GET /health`: la API está viva. Responde `{"status": "ok"}`.
+- `GET /ready`: revisa PostgreSQL, PostGIS y Redis. Responde 200 si todo está bien y 503 si alguna dependencia falla.
 
 ```json
-{
-  "status": "ok"
-}
+{ "status": "ok", "checks": { "database": true, "postgis": true, "redis": true } }
 ```
 
----
+La documentación automática (`/docs`) está desactivada a propósito.
 
-## ✅ Readiness Check
-
-Verifica la disponibilidad de PostgreSQL, PostGIS y Redis.
-
-```http
-GET /ready
-```
-
-Respuesta esperada cuando todos los servicios están operativos:
-
-```json
-{
-  "status": "ok",
-  "checks": {
-    "database": true,
-    "postgis": true,
-    "redis": true
-  }
-}
-```
-
-Si alguna dependencia falla:
-
-```http
-HTTP/1.1 503 Service Unavailable
-```
-
-```json
-{
-  "status": "degraded",
-  "checks": {
-    "database": false,
-    "postgis": true,
-    "redis": true
-  }
-}
-```
-
----
-
-## 🧪 Pruebas
-
-Ejecutar las pruebas automatizadas:
+## Pruebas
 
 ```bash
-docker compose run --rm api pytest -q
+docker compose run --rm api python -m pytest -q
 ```
 
----
+## Seguridad (nivel desarrollo)
 
-## 🔒 Seguridad
+- El contenedor de la API corre sin privilegios de administrador.
+- Redis exige contraseña y guarda sus datos con persistencia AOF.
+- Las contraseñas viven en `.env`, que está en `.gitignore`.
+- Los servicios solo escuchan en localhost.
 
-- Usuario no root dentro del contenedor.
-- Redis protegido mediante autenticación.
-- Variables sensibles gestionadas mediante `.env`.
-- Servicios expuestos únicamente en localhost durante el desarrollo.
+## Autor
 
----
+**Ariel Britez**: maquinista industrial que se está formando en Python y desarrollo de software. Este es mi primer proyecto backend.
 
-## 📖 Acerca del proyecto
-
-Sentinel API proporciona una base sólida para el desarrollo de aplicaciones backend modernas, incorporando persistencia de datos, caché, monitorización, pruebas automatizadas y despliegue mediante contenedores.
-
-La arquitectura está preparada para evolucionar con nuevas funcionalidades y servicios de negocio manteniendo una estructura modular y escalable.
-
----
-
-## 👨‍💻 Autor
-
-**Ariel**
-
-Desarrollador backend en formación enfocado en:
-
-- Python
-- FastAPI
-- PostgreSQL
-- Redis
-- Docker
-- APIs REST
-
-GitHub: https://github.com/arielbri0723@gmail.com
+GitHub: https://github.com/arielbri0723-design
