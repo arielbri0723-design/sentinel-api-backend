@@ -4,16 +4,10 @@ Están marcados como `integration` y quedan fuera de la corrida por defecto
 (ver pytest.ini). Necesitan la infraestructura de docker compose levantada.
 """
 
-import uuid
-
-import psycopg
 import pytest
-from psycopg import sql
-from psycopg.conninfo import make_conninfo
 
 from app import db
 from app.cache import check_redis
-from app.config import Settings, get_settings
 
 pytestmark = pytest.mark.integration
 
@@ -30,37 +24,32 @@ def test_redis_responde():
     assert check_redis() is True
 
 
+def test_la_api_no_usa_superusuario():
+    """RLS no se aplica a superusuarios: este test impide volver a usar uno."""
+    with db._connect() as conn:
+        es_superusuario, puede_crear_bases = conn.execute(
+            "SELECT rolsuper, rolcreatedb FROM pg_roles WHERE rolname = current_user"
+        ).fetchone()
+    assert es_superusuario is False
+    assert puede_crear_bases is False
+
+
 def test_postgis_ausente_devuelve_false(monkeypatch):
     """El test que protege el fix de /ready.
 
-    En una base SIN PostGIS, la implementación vieja
-    (pg_available_extensions) devolvía True porque el binario está en el
-    disco. Si alguien vuelve a esa consulta, este test falla.
-
-    Crea una base temporal, apunta la configuración ahí y la borra al final.
+    Con search_path=pg_catalog, postgis_version() no se resuelve: reproduce
+    exactamente el fallo de una base sin la extensión, sin crear bases
+    temporales (la API ya no tiene permiso CREATEDB). Con la implementación
+    vieja (pg_available_extensions) este test falla, porque esa tabla vive en
+    pg_catalog y sigue respondiendo que PostGIS está disponible.
     """
-    settings = get_settings()
-    nombre = f"test_sin_postgis_{uuid.uuid4().hex[:8]}"
-    creada = False
-    try:
-        with psycopg.connect(settings.database_url, autocommit=True) as admin:
-            admin.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(nombre)))
-        creada = True
+    conectar = db._connect
 
-        url = make_conninfo(settings.database_url, dbname=nombre)
-        monkeypatch.setattr(
-            db,
-            "get_settings",
-            lambda: Settings(database_url=url, redis_url=settings.redis_url),
-        )
+    def conectar_sin_postgis():
+        conn = conectar()
+        conn.execute("SET search_path = pg_catalog")
+        return conn
 
-        assert db.check_database() is True  # la base vacía sí responde
-        assert db.check_postgis() is False  # pero no tiene PostGIS
-    finally:
-        if creada:
-            with psycopg.connect(settings.database_url, autocommit=True) as admin:
-                admin.execute(
-                    sql.SQL("DROP DATABASE {} WITH (FORCE)").format(
-                        sql.Identifier(nombre)
-                    )
-                )
+    monkeypatch.setattr(db, "_connect", conectar_sin_postgis)
+
+    assert db.check_postgis() is False

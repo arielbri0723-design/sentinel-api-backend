@@ -7,8 +7,12 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:?falta POSTGRES_DB en .env}
       POSTGRES_USER: ${POSTGRES_USER:?falta POSTGRES_USER en .env}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?falta POSTGRES_PASSWORD en .env}
+      APP_PASSWORD: ${APP_PASSWORD:?falta APP_PASSWORD en .env}
     volumes:
       - pgdata:/var/lib/postgresql/data
+      # Crea el rol sin privilegios solo en un volumen nuevo; en el volumen
+      # existente hay que ejecutar api/db/init/01-app-role.sh una vez a mano.
+      - ./api/db/init:/docker-entrypoint-initdb.d:ro
     ports:
       - "127.0.0.1:5432:5432"   # solo accesible desde tu computadora
     shm_size: 256mb
@@ -43,7 +47,7 @@ services:
     build: ./api
     init: true
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      DATABASE_URL: postgresql://sentinel_app:${APP_PASSWORD}@postgres:5432/${POSTGRES_DB}
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
     depends_on:
       postgres:

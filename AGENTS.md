@@ -47,6 +47,9 @@ docker compose logs -f api
 - El `.env` local de esta máquina todavía usa `redalerta`, a propósito, porque el
   volumen `sentinel-api-backend_pgdata` ya existe con ese nombre. Cambiarlo sin
   migrar la base rompe la conexión de la API.
+- La API se conecta como `sentinel_app` (no superusuario), con `APP_PASSWORD`.
+  El rol ya fue creado en el volumen existente; en un volumen nuevo lo crea
+  `api/db/init/01-app-role.sh`. Nunca usar el superusuario: RLS no se aplicaría.
 - No ejecutar `docker compose down -v` salvo que se quiera borrar los datos.
 - Para migrar el entorno local: renombrar base y rol dentro de Postgres y actualizar
   `.env`, o recrear el volumen si no importan los datos.

@@ -24,6 +24,7 @@ Todavía no incluye las funciones de alertas ni la app móvil.
 ```text
 sentinel-api-backend/
 ├── .github/
+│   ├── dependabot.yml         # actualizaciones semanales
 │   └── workflows/
 │       └── tests.yml          # CI: tests, imagen Docker e integración
 ├── api/
@@ -33,10 +34,16 @@ sentinel-api-backend/
 │   │   ├── cache.py           # cliente Redis y chequeo de salud
 │   │   ├── config.py          # configuración desde el entorno
 │   │   ├── db.py              # conexión a Postgres y chequeos
-│   │   └── main.py
+│   │   ├── main.py
+│   │   └── ratelimit.py       # límite de peticiones por IP
+│   ├── db/
+│   │   └── init/
+│   │       └── 01-app-role.sh # crea el rol sin privilegios
 │   ├── tests/
+│   │   ├── conftest.py
 │   │   ├── test_dependencies.py   # integración con Postgres y Redis reales
-│   │   └── test_health.py
+│   │   ├── test_health.py
+│   │   └── test_ratelimit.py
 │   ├── .dockerignore
 │   ├── Dockerfile
 │   ├── pytest.ini
@@ -55,7 +62,7 @@ Requisito: Docker Desktop **iniciado** (si no, `docker compose` falla con `canno
 1. Crea tu archivo de entorno:
    - Windows PowerShell: `Copy-Item .env.example .env`
    - Linux / macOS: `cp .env.example .env`
-2. Abre `.env` y reemplaza los valores de ejemplo por contraseñas propias, largas, distintas entre sí y solo con letras y números. Los símbolos (`@ : / # ?`) rompen las URLs de conexión. Este archivo no se sube al repositorio.
+2. Abre `.env` y reemplaza los valores de ejemplo por contraseñas propias, largas, distintas entre sí y solo con letras y números. Los símbolos (`@ : / # ?`) rompen las URLs de conexión. Hay cuatro contraseñas: `POSTGRES_PASSWORD`, `REDIS_PASSWORD`, `PGADMIN_PASSWORD` y `APP_PASSWORD` (la que usa la API para conectarse a Postgres). Este archivo no se sube al repositorio.
 3. Levanta los servicios:
 
 ```bash
@@ -127,6 +134,8 @@ En cada push a `main`, GitHub Actions corre tres jobs en paralelo: los tests uni
 
 ## Seguridad (nivel desarrollo)
 
+- La API se conecta a Postgres con el rol `sentinel_app`, sin `SUPERUSER` ni `CREATEDB`. Es necesario para que las políticas RLS del Hito 1 se apliquen de verdad.
+- `/ready` acepta hasta 30 peticiones por minuto por IP (429 y `Retry-After` después); el resto de las rutas, 120. Las respuestas llevan headers de seguridad y no exponen CORS.
 - El contenedor de la API corre como usuario sin privilegios (`appuser`), no como root.
 - Redis exige contraseña y guarda sus datos con persistencia AOF.
 - Las contraseñas viven en `.env`, que está en `.gitignore`.

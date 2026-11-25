@@ -84,7 +84,7 @@ jobs:
           --health-timeout 3s
           --health-retries 10
     env:
-      DATABASE_URL: postgresql://sentinel:ci-solo-test@localhost:5432/sentinel
+      DATABASE_URL: postgresql://sentinel_app:ci-app-solo-test@localhost:5432/sentinel
       REDIS_URL: redis://localhost:6379/0
     steps:
       - uses: actions/checkout@v4
@@ -94,6 +94,15 @@ jobs:
           python-version: "3.12"
           cache: pip
           cache-dependency-path: api/requirements.txt
+
+      - name: Crear rol de aplicación (no superusuario)
+        run: |
+          PGPASSWORD=ci-solo-test psql -h localhost -U sentinel -d sentinel \
+            -v app_password="ci-app-solo-test" <<'SQL'
+          CREATE ROLE sentinel_app LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE PASSWORD :'app_password';
+          GRANT CONNECT ON DATABASE sentinel TO sentinel_app;
+          GRANT USAGE ON SCHEMA public TO sentinel_app;
+          SQL
 
       - name: Instalar dependencias
         run: pip install -r requirements.txt
