@@ -30,6 +30,14 @@ jobs:
       - name: Instalar dependencias
         run: pip install -r requirements.txt
 
+      # Informativo hasta actualizar FastAPI/pytest: hoy hay avisos conocidos
+      # en starlette (transitiva) y pytest. No queremos dejar el CI rojo.
+      - name: Auditoría de dependencias (informativa)
+        continue-on-error: true
+        run: |
+          pip install pip-audit
+          pip-audit -r requirements.txt
+
       - name: Correr los tests
         run: python -m pytest -q
 
