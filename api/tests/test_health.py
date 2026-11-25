@@ -35,3 +35,12 @@ def test_ready_503_si_falla_una_dependencia(monkeypatch):
 def test_documentacion_no_es_publica():
     assert client.get("/docs").status_code == 404
     assert client.get("/openapi.json").status_code == 404
+
+
+def test_cabeceras_de_seguridad():
+    r = client.get("/health")
+    assert r.headers["X-Content-Type-Options"] == "nosniff"
+    assert r.headers["X-Frame-Options"] == "DENY"
+    assert r.headers["Referrer-Policy"] == "no-referrer"
+    assert r.headers["Content-Security-Policy"] == "default-src 'none'"
+    assert "Access-Control-Allow-Origin" not in r.headers
