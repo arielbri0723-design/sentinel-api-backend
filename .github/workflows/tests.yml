@@ -64,13 +64,13 @@ jobs:
       postgres:
         image: postgis/postgis:16-3.4
         env:
-          POSTGRES_DB: redalerta
-          POSTGRES_USER: redalerta
+          POSTGRES_DB: sentinel
+          POSTGRES_USER: sentinel
           POSTGRES_PASSWORD: ci-solo-test
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -h 127.0.0.1 -U redalerta -d redalerta"
+          --health-cmd "pg_isready -h 127.0.0.1 -U sentinel -d sentinel"
           --health-interval 5s
           --health-timeout 3s
           --health-retries 20
@@ -84,7 +84,7 @@ jobs:
           --health-timeout 3s
           --health-retries 10
     env:
-      DATABASE_URL: postgresql://redalerta:ci-solo-test@localhost:5432/redalerta
+      DATABASE_URL: postgresql://sentinel:ci-solo-test@localhost:5432/sentinel
       REDIS_URL: redis://localhost:6379/0
     steps:
       - uses: actions/checkout@v4
