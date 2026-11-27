@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 
 from .ratelimit import RateLimitMiddleware
-from .routers import health
+from .routers import auth, health
 
 # Sin documentación pública: se activará solo en desarrollo.
 app = FastAPI(
@@ -28,3 +28,4 @@ async def cabeceras_seguras(request, call_next):
 
 
 app.include_router(health.router)
+app.include_router(auth.router)

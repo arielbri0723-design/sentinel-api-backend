@@ -71,7 +71,8 @@ services:
       MIGRATION_DATABASE_URL: postgresql://sentinel_migrator:${MIGRATION_PASSWORD}@postgres:5432/${POSTGRES_DB}
       DATABASE_URL: postgresql://sentinel_app:${APP_PASSWORD}@postgres:5432/${POSTGRES_DB}
       TEST_MIGRATION_DATABASE_URL: postgresql://sentinel_migrator:${MIGRATION_PASSWORD}@postgres:5432/sentinel_test
-      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+      # Redis DB 15 aislada: los tests la limpian y nunca tocan la DB 0 de desarrollo.
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/15
     depends_on:
       postgres:
         condition: service_healthy
@@ -90,7 +91,7 @@ services:
       MIGRATION_DATABASE_URL: postgresql://sentinel_migrator:${MIGRATION_PASSWORD}@postgres:5432/sentinel_test
       DATABASE_URL: postgresql://sentinel_app:${APP_PASSWORD}@postgres:5432/${POSTGRES_DB}
       TEST_MIGRATION_DATABASE_URL: postgresql://sentinel_migrator:${MIGRATION_PASSWORD}@postgres:5432/sentinel_test
-      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/15
     depends_on:
       postgres:
         condition: service_healthy

@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 _client: redis.Redis | None = None
 
 
-def _get_client() -> redis.Redis:
+def get_redis() -> redis.Redis:
     """Un solo cliente por proceso: si se crea uno por request, el pool de
     conexiones queda abierto hasta que lo recolecte el GC."""
     global _client
@@ -24,7 +24,7 @@ def _get_client() -> redis.Redis:
 
 def check_redis() -> bool:
     try:
-        return bool(_get_client().ping())
+        return bool(get_redis().ping())
     except Exception:
         logger.warning("Redis no responde", exc_info=True)
         return False

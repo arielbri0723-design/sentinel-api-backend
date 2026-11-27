@@ -95,7 +95,7 @@ jobs:
       DATABASE_URL: postgresql://sentinel_app:ci-app-solo-test@localhost:5432/sentinel
       MIGRATION_DATABASE_URL: postgresql://sentinel_migrator:ci-migrator-solo-test@localhost:5432/sentinel
       TEST_MIGRATION_DATABASE_URL: postgresql://sentinel_migrator:ci-migrator-solo-test@localhost:5432/sentinel_test
-      REDIS_URL: redis://localhost:6379/0
+      REDIS_URL: redis://localhost:6379/15
     steps:
       - uses: actions/checkout@v4
 
