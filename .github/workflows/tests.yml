@@ -19,7 +19,7 @@ jobs:
       DATABASE_URL: postgresql://test:test@localhost:5432/test
       REDIS_URL: redis://:test@localhost:6379/0
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-python@v5
         with:
@@ -45,7 +45,7 @@ jobs:
     name: imagen Docker
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Construir la imagen
         run: docker build -t sentinel-api-backend:ci ./api
@@ -97,7 +97,7 @@ jobs:
       TEST_MIGRATION_DATABASE_URL: postgresql://sentinel_migrator:ci-migrator-solo-test@localhost:5432/sentinel_test
       REDIS_URL: redis://localhost:6379/15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-python@v5
         with:
