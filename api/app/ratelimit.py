@@ -32,7 +32,11 @@ def limpiar_historial(limiter: "RateLimitMiddleware") -> None:
 class RateLimitMiddleware(BaseHTTPMiddleware):
     """ ventana deslizante por (IP, ruta): /ready y /auth/login son estrictos. """
 
-    LIMITS = {"/ready": (30, 60), "/auth/login": (5, 900)}
+    LIMITS = {
+        "/ready": (30, 60),
+        "/auth/login": (5, 900),
+        "/auth/register": (5, 900),
+    }
     DEFAULT = (120, 60)
 
     def __init__(self, app):
