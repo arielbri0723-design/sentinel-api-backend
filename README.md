@@ -142,6 +142,10 @@ En cada push a `main`, GitHub Actions corre tres jobs en paralelo: los tests uni
 - Los servicios solo escuchan en localhost.
 - El acceso a la base se limita con `connect_timeout` y `statement_timeout`, para que `/ready` nunca quede colgado.
 
+## Sobre el desarrollo
+
+Este proyecto es mi práctica para aprender backend. Lo construyo con ayuda de asistentes de IA para planificar, revisar y entender el código, y voy documentando lo que aprendo en cada hito.
+
 ## Autor
 
 **Ariel Britez**: maquinista industrial que se está formando en Python y desarrollo de software. Este es mi primer proyecto backend.
