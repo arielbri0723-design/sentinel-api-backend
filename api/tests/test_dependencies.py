@@ -5,6 +5,7 @@ Están marcados como `integration` y quedan fuera de la corrida por defecto
 """
 
 import pytest
+from sqlalchemy import text
 
 from app import db
 from app.cache import check_redis
@@ -26,15 +27,18 @@ def test_redis_responde():
 
 def test_la_api_no_usa_superusuario():
     """RLS no se aplica a superusuarios: este test impide volver a usar uno."""
-    with db._connect() as conn:
-        es_superusuario, puede_crear_bases = conn.execute(
-            "SELECT rolsuper, rolcreatedb FROM pg_roles WHERE rolname = current_user"
-        ).fetchone()
+    with db.probe_connection() as connection:
+        es_superusuario, puede_crear_bases = connection.execute(
+            text(
+                "SELECT rolsuper, rolcreatedb FROM pg_roles "
+                "WHERE rolname = current_user"
+            )
+        ).one()
     assert es_superusuario is False
     assert puede_crear_bases is False
 
 
-def test_postgis_ausente_devuelve_false(monkeypatch):
+def test_postgis_ausente_devuelve_false():
     """El test que protege el fix de /ready.
 
     Con search_path=pg_catalog, postgis_version() no se resuelve: reproduce
@@ -43,13 +47,6 @@ def test_postgis_ausente_devuelve_false(monkeypatch):
     vieja (pg_available_extensions) este test falla, porque esa tabla vive en
     pg_catalog y sigue respondiendo que PostGIS está disponible.
     """
-    conectar = db._connect
-
-    def conectar_sin_postgis():
-        conn = conectar()
-        conn.execute("SET search_path = pg_catalog")
-        return conn
-
-    monkeypatch.setattr(db, "_connect", conectar_sin_postgis)
-
-    assert db.check_postgis() is False
+    with db.probe_connection() as connection:
+        connection.execute(text("SET LOCAL search_path = pg_catalog"))
+        assert db._postgis_version(connection) is False

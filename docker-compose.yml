@@ -8,6 +8,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:?falta POSTGRES_USER en .env}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?falta POSTGRES_PASSWORD en .env}
       APP_PASSWORD: ${APP_PASSWORD:?falta APP_PASSWORD en .env}
+      MIGRATION_PASSWORD: ${MIGRATION_PASSWORD:?falta MIGRATION_PASSWORD en .env}
     volumes:
       - pgdata:/var/lib/postgresql/data
       # Crea el rol sin privilegios solo en un volumen nuevo; en el volumen
@@ -58,6 +59,45 @@ services:
       - "127.0.0.1:8000:8000"
     stop_grace_period: 30s
     restart: unless-stopped
+
+  # Job de migraciones: único lugar con credenciales DDL.
+  # No se levanta con `docker compose up`; se ejecuta a pedido:
+  #   docker compose --profile migrate run --rm migrate alembic upgrade head
+  migrate:
+    build: ./api
+    profiles: ["migrate"]
+    init: true
+    environment:
+      MIGRATION_DATABASE_URL: postgresql://sentinel_migrator:${MIGRATION_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      DATABASE_URL: postgresql://sentinel_app:${APP_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      TEST_MIGRATION_DATABASE_URL: postgresql://sentinel_migrator:${MIGRATION_PASSWORD}@postgres:5432/sentinel_test
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: ["alembic", "upgrade", "head"]
+    restart: "no"
+
+  # Igual que `migrate`, pero contra la base descartable de tests.
+  # Sirve para probar `upgrade head` y `downgrade base` sin tocar datos reales.
+  migrate-test:
+    build: ./api
+    profiles: ["migrate"]
+    init: true
+    environment:
+      MIGRATION_DATABASE_URL: postgresql://sentinel_migrator:${MIGRATION_PASSWORD}@postgres:5432/sentinel_test
+      DATABASE_URL: postgresql://sentinel_app:${APP_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      TEST_MIGRATION_DATABASE_URL: postgresql://sentinel_migrator:${MIGRATION_PASSWORD}@postgres:5432/sentinel_test
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: ["alembic", "upgrade", "head"]
+    restart: "no"
 
   # Herramienta de desarrollo: no se levanta salvo que lo pidas
   # (docker compose --profile tools up)

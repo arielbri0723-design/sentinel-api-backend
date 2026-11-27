@@ -1,29 +1,28 @@
 import logging
 
-import psycopg
+from sqlalchemy import text
+from sqlalchemy.engine import Connection
 
-from .config import get_settings
+from .database import probe_connection
 
 logger = logging.getLogger(__name__)
 
-# connect_timeout solo cubre el saludo inicial: si la consulta se cuelga
-# después, /ready quedaría esperando para siempre.
-_OPTIONS = "-c statement_timeout=3000"
 
-
-def _connect():
-    return psycopg.connect(
-        get_settings().database_url,
-        connect_timeout=3,
-        options=_OPTIONS,
-    )
+def _postgis_version(connection: Connection) -> bool:
+    """Devuelve True solo si postgis_version() se puede ejecutar."""
+    try:
+        version = connection.execute(text("SELECT postgis_version()"))
+        return version.scalar_one() is not None
+    except Exception:
+        logger.warning("PostGIS no está instalado o no responde", exc_info=True)
+        return False
 
 
 def check_database() -> bool:
     """Comprueba que Postgres responde."""
     try:
-        with _connect() as conn:
-            return conn.execute("SELECT 1").fetchone() == (1,)
+        with probe_connection() as connection:
+            return connection.execute(text("SELECT 1")).scalar_one() == 1
     except Exception:
         # El cliente ve solo un booleano; el detalle queda en el log del servidor.
         logger.warning("Postgres no responde", exc_info=True)
@@ -38,8 +37,8 @@ def check_postgis() -> bool:
     postgis_version() obliga a cargar la extensión: si no está, falla.
     """
     try:
-        with _connect() as conn:
-            return conn.execute("SELECT postgis_version()").fetchone() is not None
+        with probe_connection() as connection:
+            return _postgis_version(connection)
     except Exception:
         logger.warning("PostGIS no está instalado o no responde", exc_info=True)
         return False

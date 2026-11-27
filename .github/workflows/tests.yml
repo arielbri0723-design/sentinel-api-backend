@@ -93,6 +93,8 @@ jobs:
           --health-retries 10
     env:
       DATABASE_URL: postgresql://sentinel_app:ci-app-solo-test@localhost:5432/sentinel
+      MIGRATION_DATABASE_URL: postgresql://sentinel_migrator:ci-migrator-solo-test@localhost:5432/sentinel
+      TEST_MIGRATION_DATABASE_URL: postgresql://sentinel_migrator:ci-migrator-solo-test@localhost:5432/sentinel_test
       REDIS_URL: redis://localhost:6379/0
     steps:
       - uses: actions/checkout@v4
@@ -103,17 +105,32 @@ jobs:
           cache: pip
           cache-dependency-path: api/requirements.txt
 
-      - name: Crear rol de aplicación (no superusuario)
+      - name: Crear roles y base de tests
         run: |
           PGPASSWORD=ci-solo-test psql -h localhost -U sentinel -d sentinel \
-            -v app_password="ci-app-solo-test" <<'SQL'
+            -v app_password="ci-app-solo-test" \
+            -v migrator_password="ci-migrator-solo-test" <<'SQL'
           CREATE ROLE sentinel_app LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE PASSWORD :'app_password';
+          CREATE ROLE sentinel_migrator LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE PASSWORD :'migrator_password';
           GRANT CONNECT ON DATABASE sentinel TO sentinel_app;
+          GRANT CONNECT ON DATABASE sentinel TO sentinel_migrator;
           GRANT USAGE ON SCHEMA public TO sentinel_app;
+          GRANT USAGE, CREATE ON SCHEMA public TO sentinel_migrator;
           SQL
+          PGPASSWORD=ci-solo-test psql -h localhost -U sentinel -d sentinel \
+            -c "CREATE DATABASE sentinel_test OWNER sentinel_migrator"
+          PGPASSWORD=ci-solo-test psql -h localhost -U sentinel -d sentinel_test \
+            -c "CREATE EXTENSION IF NOT EXISTS postgis"
+          PGPASSWORD=ci-solo-test psql -h localhost -U sentinel -d sentinel_test \
+            -c "GRANT CONNECT ON DATABASE sentinel_test TO sentinel_app"
+          PGPASSWORD=ci-solo-test psql -h localhost -U sentinel -d sentinel_test \
+            -c "GRANT USAGE ON SCHEMA public TO sentinel_app"
 
       - name: Instalar dependencias
         run: pip install -r requirements.txt
+
+      - name: Aplicar migraciones
+        run: python -m alembic upgrade head
 
       - name: Tests de integración
         run: python -m pytest -q -m integration
