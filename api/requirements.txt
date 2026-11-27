@@ -7,5 +7,5 @@ pwdlib[argon2]==0.4.2
 email-validator==2.4.0
 sqlalchemy==2.0.58
 alembic==1.20.1
-pytest==8.3.4
+pytest==9.2.0
 httpx==0.28.1
